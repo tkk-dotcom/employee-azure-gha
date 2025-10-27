@@ -21,6 +21,7 @@ env:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+    environment: employee-azure-gha
 
     steps:
       # 1) Checkout

@@ -30,8 +30,6 @@ jobs:
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
           allow-no-subscriptions: true
-          enable-AzPSSession: true
-          auth-type: IDENTITY
 
       # 🔹 Create the Service Principal if it doesn’t exist
       - name: Ensure Service Principal exists

@@ -76,6 +76,28 @@ jobs:
           tags: ${{ env.ACR_NAME }}.azurecr.io/frontend:${{ env.IMAGE_TAG }}
           file: ./frontend/Dockerfile
 
+      - name: Create AKS Cluster
+        run: |
+          echo "Checking if AKS Cluster exists..."
+          if ! az aks show --name "${{ env.AKS_CLUSTER_NAME }}" --resource-group "${{ env.RESOURCE_GROUP }}" >/dev/null 2>&1; then
+            echo "Creating AKS Cluster..."
+            az aks create \
+              --resource-group "${{ env.RESOURCE_GROUP }}" \
+              --name "${{ env.AKS_CLUSTER_NAME }}" \
+              --node-count 1 \
+              --generate-ssh-keys \
+              --enable-managed-identity \
+              --location "eastus"
+          else
+            echo "AKS Cluster already exists."
+          fi
+
+      # Step 6: Set AKS context
+      - name: Set AKS Context
+        run: |
+          echo "Setting AKS context..."
+          az aks get-credentials --resource-group "${{ env.RESOURCE_GROUP }}" --name "${{ env.AKS_CLUSTER_NAME }}" --overwrite-existing
+      
       # ---------------------------
       # Step 4: Get AKS Credentials
       # ---------------------------

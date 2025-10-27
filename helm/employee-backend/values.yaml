@@ -1,0 +1,23 @@
+replicaCount: 2
+
+image:
+  repository: <acrName>.azurecr.io/employee-backend
+  tag: v1
+  pullPolicy: IfNotPresent
+
+service:
+  type: ClusterIP
+  port: 8080
+
+env:
+  AZURE_SQL_URL: "jdbc:sqlserver://<server>.database.windows.net:1433;database=EmployeeDB;encrypt=true;trustServerCertificate=false;hostNameInCertificate=*.database.windows.net;loginTimeout=30;"
+  AZURE_SQL_USERNAME: "<sql-username>"
+  AZURE_SQL_PASSWORD: "<sql-password>"
+
+resources:
+  limits:
+    cpu: 500m
+    memory: 512Mi
+  requests:
+    cpu: 250m
+    memory: 256Mi

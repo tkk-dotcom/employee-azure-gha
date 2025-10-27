@@ -1,0 +1,21 @@
+backend:
+  image: "employeeacr.azurecr.io/employee-app-backend"
+  tag: "latest"
+  port: 8080
+
+frontend:
+  image: "employeeacr.azurecr.io/employee-app-frontend"
+  tag: "latest"
+  port: 80
+
+mysql:
+  image: "mysql:8.0"
+  rootPassword: "RootPass123!"
+  dbName: "employeedb"
+  user: "empuser"
+  password: "EmpPass123!"
+  port: 3306
+
+ingress:
+  enabled: true
+  className: nginx

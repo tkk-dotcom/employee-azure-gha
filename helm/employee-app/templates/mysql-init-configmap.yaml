@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mysql-init-script
+data:
+  init.sql: |
+    CREATE DATABASE IF NOT EXISTS employeedb;
+    USE employeedb;
+    CREATE TABLE IF NOT EXISTS emp (
+      empId INT PRIMARY KEY AUTO_INCREMENT,
+      empName VARCHAR(100) NOT NULL
+    );
+    INSERT INTO emp (empName) VALUES ('John Doe'), ('Jane Smith');

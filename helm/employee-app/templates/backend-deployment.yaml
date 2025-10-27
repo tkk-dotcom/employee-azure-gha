@@ -1,0 +1,26 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: employee-backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: employee-backend
+  template:
+    metadata:
+      labels:
+        app: employee-backend
+    spec:
+      containers:
+        - name: backend
+          image: "{{ .Values.backend.image }}:{{ .Values.backend.tag }}"
+          ports:
+            - containerPort: {{ .Values.backend.port }}
+          env:
+            - name: SPRING_DATASOURCE_URL
+              value: "jdbc:mysql://employee-mysql:3306/{{ .Values.mysql.dbName }}"
+            - name: SPRING_DATASOURCE_USERNAME
+              value: "{{ .Values.mysql.user }}"
+            - name: SPRING_DATASOURCE_PASSWORD
+              value: "{{ .Values.mysql.password }}"

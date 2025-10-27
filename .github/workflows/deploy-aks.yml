@@ -1,0 +1,70 @@
+name: Build and Deploy Employee App to AKS
+
+on:
+  push:
+    branches: [ "main" ]
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  RESOURCE_GROUP: employee-rg
+  AKS_CLUSTER: employee-aks
+  ACR_NAME: employeeacr
+  HELM_CHART_PATH: ./helm/employee-app
+  IMAGE_TAG: ${{ github.sha }}
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Login to Azure (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Azure Account
+        run: az account show
+
+      - name: Login to ACR
+        run: az acr login --name $ACR_NAME
+
+      - name: Build & Push Backend Image
+        run: |
+          cd backend
+          docker build -t $ACR_NAME.azurecr.io/employee-app-backend:${IMAGE_TAG} .
+          docker push $ACR_NAME.azurecr.io/employee-app-backend:${IMAGE_TAG}
+
+      - name: Build & Push Frontend Image
+        run: |
+          cd frontend
+          docker build -t $ACR_NAME.azurecr.io/employee-app-frontend:${IMAGE_TAG} .
+          docker push $ACR_NAME.azurecr.io/employee-app-frontend:${IMAGE_TAG}
+
+      - name: Get AKS Credentials
+        run: |
+          az aks get-credentials --resource-group $RESOURCE_GROUP --name $AKS_CLUSTER --overwrite-existing
+
+      - name: Ensure ingress-nginx exists
+        run: |
+          set -e
+          if ! kubectl get ns ingress-nginx >/dev/null 2>&1; then
+            helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
+            helm repo update
+            helm upgrade --install ingress-nginx ingress-nginx/ingress-nginx               --namespace ingress-nginx --create-namespace
+            echo "Waiting for ingress-nginx external IP..."
+            kubectl wait --namespace ingress-nginx               --for=condition=available deploy/ingress-nginx-controller --timeout=180s || true
+          else
+            echo "ingress-nginx already installed."
+          fi
+
+      - name: Helm Upgrade/Install
+        run: |
+          helm upgrade --install employee-app $HELM_CHART_PATH             --set backend.image=$ACR_NAME.azurecr.io/employee-app-backend             --set backend.tag=${IMAGE_TAG}             --set frontend.image=$ACR_NAME.azurecr.io/employee-app-frontend             --set frontend.tag=${IMAGE_TAG}

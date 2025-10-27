@@ -52,19 +52,12 @@ jobs:
              echo "acr_exists=true" >> $GITHUB_OUTPUT
            fi
 
-        # ---------------------------
-      # Step 3: Log in to ACR
-      # ---------------------------
-      - name: Log in to ACR
-        uses: azure/docker-login@v2
-        with:
-          login-server: ${{ env.ACR_NAME }}.azurecr.io
-          client-id: 5a98946b-1cfc-41eb-872b-7e68ed7f3c81
-          tenant-id: a11c3d03-37d6-45fa-992d-bbd72b17bbcf
-          subscription-id: 1569933f-380c-4d4b-9d18-599f50547cb9
+       # Step 1: Login to ACR
+      - name: Login to Azure Container Registry
+        run: echo ${{ secrets.ACR_PASSWORD }} | docker login ${{ env.ACR_NAME }}.azurecr.io -u ${{ secrets.ACR_USERNAME }} --password-stdin
 
       # ---------------------------
-      # Step 4: Build & Push Backend Image
+      # Step 2: Build & Push Backend Image
       # ---------------------------
       - name: Build & Push Backend Image
         uses: docker/build-push-action@v6
@@ -75,7 +68,7 @@ jobs:
           file: ./employee-backend/Dockerfile
 
       # ---------------------------
-      # Step 5: Build & Push Frontend Image (if applicable)
+      # Step 3: Build & Push Frontend Image (if applicable)
       # ---------------------------
       - name: Build & Push Frontend Image
         uses: docker/build-push-action@v6
@@ -86,21 +79,21 @@ jobs:
           file: ./employee-frontend/Dockerfile
 
       # ---------------------------
-      # Step 6: Get AKS Credentials
+      # Step 4: Get AKS Credentials
       # ---------------------------
       - name: Get AKS Credentials
         run: |
           az aks get-credentials --resource-group $RESOURCE_GROUP --name $AKS_CLUSTER --overwrite-existing
 
       # ---------------------------
-      # Step 7: Ensure ingress-nginx exists (optional)
+      # Step 5: Ensure ingress-nginx exists (optional)
       # ---------------------------
       - name: Ensure ingress-nginx exists
         run: |
           kubectl get ns ingress-nginx || kubectl create ns ingress-nginx
 
       # ---------------------------
-      # Step 8: Helm Upgrade/Install
+      # Step 6: Helm Upgrade/Install
       # ---------------------------
       - name: Helm Upgrade/Install
         run: |
@@ -112,7 +105,7 @@ jobs:
             --set frontend.image.tag=${{ env.IMAGE_TAG }}
 
       # ---------------------------
-      # Step 9: Logout (cleanup)
+      # Step 7: Logout (cleanup)
       # ---------------------------
       - name: Logout from Azure
         run: |

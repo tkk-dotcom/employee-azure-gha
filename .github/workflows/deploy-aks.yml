@@ -11,7 +11,7 @@ permissions:
 env:
   RESOURCE_GROUP: employee-rg
   AKS_CLUSTER: employee-aks
-  ACR_NAME: employeeacr
+  ACR_NAME: employeeacr97050
   HELM_CHART_PATH: ./helm/employee-app
   IMAGE_TAG: ${{ github.sha }}
 

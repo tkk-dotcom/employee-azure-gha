@@ -23,13 +23,45 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Login to Azure (OIDC)
-        uses: azure/login@v1
+      - name: Login to Azure using OIDC
+        uses: azure/login@v2
         with:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-          
+          allow-no-subscriptions: true
+
+      # 🔹 Create the Service Principal if it doesn’t exist
+      - name: Ensure Service Principal exists
+        run: |
+          echo "🔍 Checking if Service Principal exists..."
+          if ! az ad sp show --id ${{ secrets.AZURE_CLIENT_ID }} &>/dev/null; then
+            echo "🆕 Creating Service Principal for App ID..."
+            az ad sp create --id ${{ secrets.AZURE_CLIENT_ID }}
+          else
+            echo "✅ Service Principal already exists."
+          fi
+
+      # 🔹 Assign Contributor Role if not already assigned
+      - name: Ensure Role Assignment
+        run: |
+          SUBSCRIPTION_ID=${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          ROLE="Contributor"
+          echo "🔍 Checking if role assignment exists..."
+          if ! az role assignment list --assignee ${{ secrets.AZURE_CLIENT_ID }} --scope /subscriptions/$SUBSCRIPTION_ID --query "[?roleDefinitionName=='$ROLE']" -o tsv | grep -q .; then
+            echo "🪄 Assigning $ROLE role..."
+            az role assignment create \
+              --assignee ${{ secrets.AZURE_CLIENT_ID }} \
+              --role $ROLE \
+              --scope /subscriptions/$SUBSCRIPTION_ID
+          else
+            echo "✅ Role $ROLE already assigned."
+          fi
+
+      # 🔹 Continue your normal build or deployment tasks
+      - name: Deploy or Build Step
+        run: echo "🚀 Deployment steps continue here..."
+        
       - name: Create Resource Group
         run: |
           echo "Creating Resource Group if not exists..."

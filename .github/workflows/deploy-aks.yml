@@ -77,17 +77,6 @@ jobs:
           file: ./frontend/Dockerfile
 
       # ---------------------------
-      # Step 3: Build & Push Frontend Image (if applicable)
-      # ---------------------------
-      - name: Build & Push Frontend Image
-        uses: docker/build-push-action@v6
-        with:
-          context: ./employee-frontend
-          push: true
-          tags: ${{ env.ACR_NAME }}.azurecr.io/${{ env.FRONTEND_IMAGE }}:${{ env.IMAGE_TAG }}
-          file: ./employee-frontend/Dockerfile
-
-      # ---------------------------
       # Step 4: Get AKS Credentials
       # ---------------------------
       - name: Get AKS Credentials

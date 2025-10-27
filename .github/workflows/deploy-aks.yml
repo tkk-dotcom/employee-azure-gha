@@ -29,8 +29,7 @@ jobs:
           client-id: 5a98946b-1cfc-41eb-872b-7e68ed7f3c81
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-          allow-no-subscriptions: true
-
+         
       # 🔹 Create the Service Principal if it doesn’t exist
       - name: Ensure Service Principal exists
         run: |

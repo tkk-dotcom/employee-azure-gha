@@ -27,8 +27,10 @@ jobs:
         uses: azure/login@v2
         with:
           client-id: 5a98946b-1cfc-41eb-872b-7e68ed7f3c81
-          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          tenant-id: a11c3d03-37d6-45fa-992d-bbd72b17bbcf
+          subscription-id: 1569933f-380c-4d4b-9d18-599f50547cb9
+          allow-no-subscriptions: true
+
          
       # 🔹 Create the Service Principal if it doesn’t exist
       - name: Ensure Service Principal exists

@@ -120,21 +120,64 @@ jobs:
         run: |
           kubectl get ns ingress-nginx || kubectl create ns ingress-nginx
 
-      # 12) Setup Helm (ensures helm is available)
-      - name: Setup Helm
-        uses: azure/setup-helm@v4
-
-      # 13) Helm Upgrade/Install
-      - name: Helm Upgrade/Install
+      # 12) Deploy Backend and Frontend
+      - name: Deploy Backend and Frontend
         run: |
-          helm upgrade --install employee-app "${{ env.HELM_CHART_PATH }}" \
-            --namespace default \
-            --create-namespace \
-            --set backend.image.repository=${{ env.ACR_NAME }}.azurecr.io/${{ env.BACKEND_IMAGE }} \
-            --set backend.image.tag=${{ env.IMAGE_TAG }} \
-            --set frontend.image.repository=${{ env.ACR_NAME }}.azurecr.io/${{ env.FRONTEND_IMAGE }} \
-            --set frontend.image.tag=${{ env.IMAGE_TAG }}
+          echo "Deploying backend..."
+          kubectl apply -f ./backend/k8s/
+          echo "Deploying frontend..."
+          kubectl apply -f ./frontend/k8s/
 
-      # 14) Logout
+      # 13) Expose Frontend Service with External IP (LoadBalancer)
+      - name: Create/Update Frontend LoadBalancer Service
+        run: |
+          cat <<EOF | kubectl apply -f -
+          apiVersion: v1
+          kind: Service
+          metadata:
+            name: frontend-lb
+          spec:
+            type: LoadBalancer
+            selector:
+              app: frontend
+            ports:
+              - protocol: TCP
+                port: 80
+                targetPort: 80
+          EOF
+
+      # 14) Wait for External IP Assignment
+      - name: Wait for External IP
+        run: |
+          echo "Waiting for external IP..."
+          for i in {1..30}; do
+            IP=$(kubectl get svc frontend-lb -o jsonpath='{.status.loadBalancer.ingress[0].ip}' 2>/dev/null || true)
+            if [ -n "$IP" ]; then
+              echo "External IP assigned: $IP"
+              echo "EXTERNAL_IP=$IP" >> $GITHUB_ENV
+              break
+            fi
+            echo "Attempt $i: External IP not ready yet..."
+            sleep 10
+          done
+          if [ -z "$IP" ]; then
+            echo "❌ External IP not assigned after waiting."
+            exit 1
+          fi
+
+      # 15) Test URL Connectivity
+      - name: Test App Connectivity
+        run: |
+          echo "Testing connection to frontend..."
+          curl -I http://$EXTERNAL_IP || (echo "App not reachable" && exit 1)
+          echo "✅ Successfully reached http://$EXTERNAL_IP"
+
+      # 16) Show Cluster Info
+      - name: Display Cluster Info
+        run: |
+          kubectl get svc -o wide
+          kubectl get pods -o wide
+
+      # 17) Logout from Azure
       - name: Logout from Azure
         run: az account clear

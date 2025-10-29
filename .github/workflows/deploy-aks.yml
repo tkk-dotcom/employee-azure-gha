@@ -13,7 +13,6 @@ env:
   RESOURCE_GROUP: employee-rg
   LOCATION: eastus
   ACR_NAME: employeeacr97050
-  HELM_CHART_PATH: ./helm/employee-app
   BACKEND_IMAGE: backend
   FRONTEND_IMAGE: frontend
   IMAGE_TAG: ${{ github.sha }}
